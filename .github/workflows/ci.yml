@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --python ${{ matrix.python-version }}
+      - run: uv run ruff check .
+      - run: uv run pytest
+
+  install-from-git-url:
+    # Proves the documented install route works from a clean environment (REQ-046).
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: astral-sh/setup-uv@v6
+      - run: uv tool install "git+${{ github.server_url }}/${{ github.repository }}@${{ github.sha }}"
+      - run: sqlite-rss-logger --help
+      - run: |
+          mkdir demo && cd demo
+          uv run --with "git+${{ github.server_url }}/${{ github.repository }}@${{ github.sha }}" \
+            python -c "import logging; from sqlite_rss_logger import SQLiteHandler; h = SQLiteHandler('ci', log_dir='logs'); logging.getLogger().addHandler(h); logging.warning('hello'); print('ok')"
