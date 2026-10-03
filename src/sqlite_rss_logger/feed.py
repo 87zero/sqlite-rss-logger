@@ -37,6 +37,9 @@ def _item(entry: LogEntry) -> dict[str, str]:
     return {
         # Implements REQ-025: title, description, date and stable GUID.
         "title": f"[{entry.level}] {entry.application}: {summary}",
+        # Escaped twice on purpose: RSS 2.0 descriptions are HTML carried as XML text.
+        # html.escape() makes the log text safe HTML; Jinja autoescape then encodes that
+        # HTML for the XML. Readers undo both layers. Do not mark this Markup/|safe.
         "description": f"<pre>{html.escape(body)}</pre>",
         "pub_date": format_datetime(created),
         "guid": f"{entry.application}-{entry.id}",
