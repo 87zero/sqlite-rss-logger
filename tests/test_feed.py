@@ -87,3 +87,29 @@ def test_links_drop_query_string_but_self_link_keeps_it():
     self_link = root.find("./channel/{http://www.w3.org/2005/Atom}link")
     assert self_link.get("href") == url
     assert xml_text.count("SECRET") == 1
+
+
+def test_channel_title_and_description_default():
+    """REQ-032."""
+    root = ET.fromstring(render_rss(entries(1), link="http://example/rss"))
+    assert root.findtext("./channel/title") == "Application logs"
+    assert root.findtext("./channel/description") == "Latest log records from all applications"
+
+
+def test_channel_title_and_description_can_be_set():
+    """REQ-032 (issue #3)."""
+    root = ET.fromstring(
+        render_rss(entries(1), link="http://example/rss", title="Shop logs", description="Prod")
+    )
+    assert root.findtext("./channel/title") == "Shop logs"
+    assert root.findtext("./channel/description") == "Prod"
+
+
+def test_custom_title_is_escaped_and_cleaned():
+    """Special characters stay valid XML and read back unchanged."""
+    xml_text = render_rss(
+        entries(1), link="http://example/rss", title="R&D <logs> \x00", description="a & b"
+    )
+    root = ET.fromstring(xml_text)
+    assert root.findtext("./channel/title") == "R&D <logs> "
+    assert root.findtext("./channel/description") == "a & b"

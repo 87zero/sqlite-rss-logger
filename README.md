@@ -123,6 +123,10 @@ Options (each also has an environment variable):
 | `--default-items` | `SQLITE_RSS_LOGGER_DEFAULT_ITEMS` | `50` |
 | `--max-items` | `SQLITE_RSS_LOGGER_MAX_ITEMS` | `500` |
 | `--token` | `SQLITE_RSS_LOGGER_TOKEN` | none (feed is open) |
+| `--title` | `SQLITE_RSS_LOGGER_TITLE` | `Application logs` |
+| `--description` | `SQLITE_RSS_LOGGER_DESCRIPTION` | `Latest log records from all applications` |
+
+If you call `render_rss()` yourself, pass `title=` and `description=` instead.
 
 Notes:
 

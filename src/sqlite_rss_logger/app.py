@@ -9,7 +9,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query, Request, Response
 
-from sqlite_rss_logger.feed import render_rss
+from sqlite_rss_logger.feed import DEFAULT_DESCRIPTION, DEFAULT_TITLE, render_rss
 from sqlite_rss_logger.reader import latest_entries
 
 
@@ -20,6 +20,8 @@ class Settings:
     default_items: int = 50
     max_items: int = 500
     token: str | None = None
+    title: str = DEFAULT_TITLE
+    description: str = DEFAULT_DESCRIPTION
 
 
 def _min_level(name: str) -> int:
@@ -63,7 +65,12 @@ def create_app(settings: Settings) -> FastAPI:
             settings.log_dir, count, applications=apps, min_level=_min_level(level)
         )
         return Response(
-            render_rss(entries, link=str(request.url)),
+            render_rss(
+                entries,
+                link=str(request.url),
+                title=settings.title,
+                description=settings.description,
+            ),
             media_type="application/rss+xml",
         )
 

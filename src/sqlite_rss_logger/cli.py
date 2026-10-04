@@ -10,6 +10,7 @@ import uvicorn
 from rich.logging import RichHandler
 
 from sqlite_rss_logger.app import Settings, create_app
+from sqlite_rss_logger.feed import DEFAULT_DESCRIPTION, DEFAULT_TITLE
 
 ENV = "SQLITE_RSS_LOGGER_"
 
@@ -52,15 +53,43 @@ ENV = "SQLITE_RSS_LOGGER_"
     show_envvar=True,
     help="Require this token (?token=... or 'Authorization: Bearer ...'). Open if unset.",
 )
+@click.option(
+    "--title",
+    default=DEFAULT_TITLE,
+    show_default=True,
+    envvar=ENV + "TITLE",
+    show_envvar=True,
+    help="Feed title shown in feed readers.",
+)
+@click.option(
+    "--description",
+    default=DEFAULT_DESCRIPTION,
+    show_default=True,
+    envvar=ENV + "DESCRIPTION",
+    show_envvar=True,
+    help="Feed description shown in feed readers.",
+)
 @click.version_option(package_name="sqlite-rss-logger")
 def main(
-    log_dir: Path, host: str, port: int, default_items: int, max_items: int, token: str | None
+    log_dir: Path,
+    host: str,
+    port: int,
+    default_items: int,
+    max_items: int,
+    token: str | None,
+    title: str,
+    description: str,
 ) -> None:
     """Serve the latest log records from all application databases as an RSS feed."""
     logging.basicConfig(level=logging.INFO, format="%(message)s", handlers=[RichHandler()])
     if not log_dir.is_dir():
         logging.getLogger(__name__).warning("Log directory %s does not exist yet", log_dir)
     settings = Settings(
-        log_dir=log_dir, default_items=default_items, max_items=max_items, token=token or None
+        log_dir=log_dir,
+        default_items=default_items,
+        max_items=max_items,
+        token=token or None,
+        title=title,
+        description=description,
     )
     uvicorn.run(create_app(settings), host=host, port=port, log_config=None)

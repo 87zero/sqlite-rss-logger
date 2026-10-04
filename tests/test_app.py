@@ -135,3 +135,11 @@ def test_token_is_not_leaked_into_channel_or_item_links(log_dir, make_handler):
     (item,) = root.findall("./channel/item")
     assert item.findtext("link").endswith("/rss#web-1")
     assert "s3cret" not in item.findtext("link")
+
+
+def test_feed_title_and_description_come_from_settings(log_dir):
+    """REQ-032."""
+    client = make_client(log_dir, title="Shop logs", description="Production")
+    root = ET.fromstring(client.get("/rss").text)
+    assert root.findtext("./channel/title") == "Shop logs"
+    assert root.findtext("./channel/description") == "Production"

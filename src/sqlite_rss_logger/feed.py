@@ -21,6 +21,9 @@ _env = Environment(
 _INVALID_XML = re.compile("[^\x09\x0a\x0d\x20-퟿-�\U00010000-\U0010ffff]")
 _TITLE_LENGTH = 80
 
+DEFAULT_TITLE = "Application logs"
+DEFAULT_DESCRIPTION = "Latest log records from all applications"
+
 
 def _clean(text: str) -> str:
     """Remove characters that are not allowed in XML 1.0."""
@@ -51,8 +54,15 @@ def _item(entry: LogEntry, base_link: str) -> dict[str, str]:
     }
 
 
-def render_rss(entries: list[LogEntry], link: str) -> str:
+def render_rss(
+    entries: list[LogEntry],
+    link: str,
+    title: str = DEFAULT_TITLE,
+    description: str = DEFAULT_DESCRIPTION,
+) -> str:
     """Return an RSS 2.0 document for ``entries`` (already ordered newest first).
+
+    ``title`` and ``description`` are the channel's title and description.
 
     ``link`` is the URL the feed was requested at. It is used as-is for the
     ``rel="self"`` link. The channel and item links drop the query string and
@@ -61,10 +71,10 @@ def render_rss(entries: list[LogEntry], link: str) -> str:
     parts = urlsplit(link)
     base_link = urlunsplit((parts.scheme, parts.netloc, parts.path, "", ""))
     return _env.get_template("rss.xml.j2").render(
-        title="Application logs",
+        title=_clean(title),
         link=base_link,
         self_link=link,
-        description="Latest log records from all applications",
+        description=_clean(description),
         build_date=format_datetime(datetime.now(UTC)),
         items=[_item(e, base_link) for e in entries],
     )

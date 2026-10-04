@@ -39,6 +39,7 @@ of the log databases and publishes them as an RSS feed.
 | REQ-029 | The feed endpoint is read-only (`GET` only). | Must |
 | REQ-030 | The feed endpoint can optionally be protected by a static token set in configuration; when no token is configured, the feed is open. | Could |
 | REQ-031 | The log directory, default item count, maximum item count and listen address are configurable, not hard-coded. | Must |
+| REQ-032 | The feed title and description are configurable (`render_rss()` parameters, `Settings`, `--title`/`--description` and environment variables), defaulting to "Application logs" and "Latest log records from all applications", so several deployments can be told apart in a feed reader. | Should |
 
 ## Packaging and distribution
 

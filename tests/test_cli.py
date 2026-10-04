@@ -1,6 +1,9 @@
 """Tests for the command line entry point (REQ-042, REQ-044)."""
 
+import xml.etree.ElementTree as ET
+
 from click.testing import CliRunner
+from fastapi.testclient import TestClient
 
 from sqlite_rss_logger import cli
 
@@ -20,3 +23,16 @@ def test_options_reach_settings(monkeypatch, tmp_path):
     assert result.exit_code == 0, result.output
     assert captured["port"] == 9123
     assert captured["host"] == "127.0.0.1"
+
+
+def test_title_and_description_options_reach_settings(monkeypatch, tmp_path):
+    """REQ-032: option and environment variable both work."""
+    captured = {}
+    monkeypatch.setattr(cli.uvicorn, "run", lambda app, **kw: captured.update(app=app, **kw))
+    monkeypatch.setenv("SQLITE_RSS_LOGGER_DESCRIPTION", "From env")
+    result = CliRunner().invoke(cli.main, ["--log-dir", str(tmp_path), "--title", "Shop logs"])
+    assert result.exit_code == 0, result.output
+    client = TestClient(captured["app"])
+    root = ET.fromstring(client.get("/rss").text)
+    assert root.findtext("./channel/title") == "Shop logs"
+    assert root.findtext("./channel/description") == "From env"
