@@ -124,3 +124,14 @@ class TestToken:
 
     def test_open_when_no_token_configured(self, log_dir):
         assert make_client(log_dir).get("/rss").status_code == 200
+
+
+def test_token_is_not_leaked_into_channel_or_item_links(log_dir, make_handler):
+    """REQ-025, REQ-030: only the rel=self link carries the requested URL."""
+    write_record(make_handler("web"), "x", 1.0)
+    response = make_client(log_dir, token="s3cret").get("/rss?token=s3cret")
+    root = ET.fromstring(response.text)
+    assert "s3cret" not in root.findtext("./channel/link")
+    (item,) = root.findall("./channel/item")
+    assert item.findtext("link").endswith("/rss#web-1")
+    assert "s3cret" not in item.findtext("link")

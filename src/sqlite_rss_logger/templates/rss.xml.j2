@@ -5,10 +5,11 @@
     <link>{{ link }}</link>
     <description>{{ description }}</description>
     <lastBuildDate>{{ build_date }}</lastBuildDate>
-    <atom:link href="{{ link }}" rel="self" type="application/rss+xml"/>
+    <atom:link href="{{ self_link }}" rel="self" type="application/rss+xml"/>
 {% for item in items %}
     <item>
       <title>{{ item.title }}</title>
+      <link>{{ item.link }}</link>
       <description>{{ item.description }}</description>
       <pubDate>{{ item.pub_date }}</pubDate>
       <guid isPermaLink="false">{{ item.guid }}</guid>

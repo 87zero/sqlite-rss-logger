@@ -6,6 +6,7 @@ import html
 import re
 from datetime import UTC, datetime
 from email.utils import format_datetime
+from urllib.parse import urlsplit, urlunsplit
 
 from jinja2 import Environment, PackageLoader
 
@@ -26,7 +27,7 @@ def _clean(text: str) -> str:
     return _INVALID_XML.sub("", text)
 
 
-def _item(entry: LogEntry) -> dict[str, str]:
+def _item(entry: LogEntry, base_link: str) -> dict[str, str]:
     summary = _clean(entry.message).strip().splitlines()[0] if entry.message.strip() else ""
     if len(summary) > _TITLE_LENGTH:
         summary = summary[: _TITLE_LENGTH - 3] + "..."
@@ -34,25 +35,36 @@ def _item(entry: LogEntry) -> dict[str, str]:
     if entry.traceback:
         body += "\n\n" + _clean(entry.traceback)
     created = datetime.fromisoformat(entry.created)
+    guid = f"{entry.application}-{entry.id}"
     return {
-        # Implements REQ-025: title, description, date and stable GUID.
+        # Implements REQ-025: title, link, description, date and stable GUID.
         "title": f"[{entry.level}] {entry.application}: {summary}",
+        # Unique per item; some readers hide or merge items without distinct links.
+        "link": f"{base_link}#{guid}",
         # Escaped twice on purpose: RSS 2.0 descriptions are HTML carried as XML text.
         # html.escape() makes the log text safe HTML; Jinja autoescape then encodes that
         # HTML for the XML. Readers undo both layers. Do not mark this Markup/|safe.
         "description": f"<pre>{html.escape(body)}</pre>",
         "pub_date": format_datetime(created),
-        "guid": f"{entry.application}-{entry.id}",
+        "guid": guid,
         "level": entry.level,
     }
 
 
 def render_rss(entries: list[LogEntry], link: str) -> str:
-    """Return an RSS 2.0 document for ``entries`` (already ordered newest first)."""
+    """Return an RSS 2.0 document for ``entries`` (already ordered newest first).
+
+    ``link`` is the URL the feed was requested at. It is used as-is for the
+    ``rel="self"`` link. The channel and item links drop the query string and
+    fragment, so a token in the URL never appears in them.
+    """
+    parts = urlsplit(link)
+    base_link = urlunsplit((parts.scheme, parts.netloc, parts.path, "", ""))
     return _env.get_template("rss.xml.j2").render(
         title="Application logs",
-        link=link,
+        link=base_link,
+        self_link=link,
         description="Latest log records from all applications",
         build_date=format_datetime(datetime.now(UTC)),
-        items=[_item(e) for e in entries],
+        items=[_item(e, base_link) for e in entries],
     )

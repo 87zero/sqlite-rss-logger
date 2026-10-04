@@ -58,3 +58,32 @@ def test_description_is_text_not_child_elements():
     description = root.find("./channel/item/description")
     assert len(description) == 0
     assert root.find(".//pre") is None
+
+
+def entries(count: int) -> list[LogEntry]:
+    return [
+        LogEntry("demo", i, f"2026-10-03T08:55:{i:02d}.000000+00:00", "INFO", 20, "demo", "m", None)
+        for i in range(1, count + 1)
+    ]
+
+
+def test_each_item_has_a_unique_link_with_guid_fragment():
+    """REQ-025: some readers hide or merge items without distinct links (issue #2)."""
+    root = ET.fromstring(render_rss(entries(3), link="http://example/rss"))
+    items = root.findall("./channel/item")
+    links = [i.findtext("link") for i in items]
+    assert links == [f"http://example/rss#{i.findtext('guid')}" for i in items]
+    assert len(set(links)) == 3
+
+
+def test_links_drop_query_string_but_self_link_keeps_it():
+    url = "http://example/rss?app=demo&level=warning&token=SECRET"
+    xml_text = render_rss(entries(2), link=url)
+    root = ET.fromstring(xml_text)
+    assert root.findtext("./channel/link") == "http://example/rss"
+    for item in root.findall("./channel/item"):
+        assert "SECRET" not in item.findtext("link")
+        assert "?" not in item.findtext("link")
+    self_link = root.find("./channel/{http://www.w3.org/2005/Atom}link")
+    assert self_link.get("href") == url
+    assert xml_text.count("SECRET") == 1
