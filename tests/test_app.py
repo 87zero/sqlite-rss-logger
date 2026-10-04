@@ -30,7 +30,7 @@ def test_feed_is_rss_with_expected_item_fields(log_dir, make_handler):
     assert item.findtext("title") == "[WARNING] web: hello"
     assert "hello" in item.findtext("description")
     assert item.findtext("pubDate") == "Tue, 14 Nov 2023 22:13:20 +0000"
-    assert item.findtext("guid") == "web-1"
+    assert item.findtext("guid") == "web-1-gqll7vatq8"
 
 
 def test_items_merged_newest_first(log_dir, make_handler):
@@ -133,7 +133,7 @@ def test_token_is_not_leaked_into_channel_or_item_links(log_dir, make_handler):
     root = ET.fromstring(response.text)
     assert "s3cret" not in root.findtext("./channel/link")
     (item,) = root.findall("./channel/item")
-    assert item.findtext("link").endswith("/rss#web-1")
+    assert item.findtext("link").startswith("http://testserver/rss#web-1-")
     assert "s3cret" not in item.findtext("link")
 
 

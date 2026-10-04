@@ -81,10 +81,10 @@ curl "http://127.0.0.1:8000/rss?level=warning"
 ```xml
 <item>
   <title>[WARNING] demo-web: Slow request: /search took 2.4s</title>
-  <link>http://127.0.0.1:8000/rss#demo-web-2</link>
+  <link>http://127.0.0.1:8000/rss#demo-web-2-hmv26f3adc</link>
   <description>&lt;pre&gt;Slow request: /search took 2.4s&lt;/pre&gt;</description>
   <pubDate>Sat, 03 Oct 2026 08:55:12 +0000</pubDate>
-  <guid isPermaLink="false">demo-web-2</guid>
+  <guid isPermaLink="false">demo-web-2-hmv26f3adc</guid>
   <category>WARNING</category>
 </item>
 ```

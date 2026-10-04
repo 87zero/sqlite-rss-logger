@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import html
 import re
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from email.utils import format_datetime
 from urllib.parse import urlsplit, urlunsplit
 
@@ -21,6 +21,9 @@ _env = Environment(
 _INVALID_XML = re.compile("[^\x09\x0a\x0d\x20-퟿-�\U00010000-\U0010ffff]")
 _TITLE_LENGTH = 80
 
+_EPOCH = datetime(1970, 1, 1, tzinfo=UTC)
+_BASE36 = "0123456789abcdefghijklmnopqrstuvwxyz"
+
 DEFAULT_TITLE = "Application logs"
 DEFAULT_DESCRIPTION = "Latest log records from all applications"
 
@@ -28,6 +31,25 @@ DEFAULT_DESCRIPTION = "Latest log records from all applications"
 def _clean(text: str) -> str:
     """Remove characters that are not allowed in XML 1.0."""
     return _INVALID_XML.sub("", text)
+
+
+def _base36(number: int) -> str:
+    digits = ""
+    while number:
+        number, remainder = divmod(number, 36)
+        digits = _BASE36[remainder] + digits
+    return digits or "0"
+
+
+def _guid(entry: LogEntry, created: datetime) -> str:
+    """Return ``<application>-<id>-<creation time>`` with the time in base 36.
+
+    Record ids restart at 1 if a database is deleted and recreated. The creation
+    time (integer microseconds since the epoch, so no float rounding) keeps GUIDs
+    distinct, so readers that remember GUIDs do not hide new records.
+    """
+    micros = (created - _EPOCH) // timedelta(microseconds=1)
+    return f"{entry.application}-{entry.id}-{_base36(micros)}"
 
 
 def _item(entry: LogEntry, base_link: str) -> dict[str, str]:
@@ -38,7 +60,7 @@ def _item(entry: LogEntry, base_link: str) -> dict[str, str]:
     if entry.traceback:
         body += "\n\n" + _clean(entry.traceback)
     created = datetime.fromisoformat(entry.created)
-    guid = f"{entry.application}-{entry.id}"
+    guid = _guid(entry, created)
     return {
         # Implements REQ-025: title, link, description, date and stable GUID.
         "title": f"[{entry.level}] {entry.application}: {summary}",

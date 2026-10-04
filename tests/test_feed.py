@@ -113,3 +113,35 @@ def test_custom_title_is_escaped_and_cleaned():
     root = ET.fromstring(xml_text)
     assert root.findtext("./channel/title") == "R&D <logs> "
     assert root.findtext("./channel/description") == "a & b"
+
+
+def guid_of(entry: LogEntry) -> str:
+    root = ET.fromstring(render_rss([entry], link="http://example/rss"))
+    return root.findtext("./channel/item/guid")
+
+
+def test_guid_is_application_id_and_base36_creation_time():
+    """REQ-025: 2026-10-03T08:55:12.123456Z is 1791017712123456 microseconds."""
+    entry = LogEntry(
+        "demo", 2, "2026-10-03T08:55:12.123456+00:00", "INFO", 20, "demo", "m", None
+    )
+    guid = guid_of(entry)
+    assert guid == "demo-2-hmv26f3adc"
+    assert int(guid.rsplit("-", 1)[1], 36) == 1_791_017_712_123_456
+
+
+def test_guid_is_stable_across_renders():
+    entry = entries(1)[0]
+    assert guid_of(entry) == guid_of(entry)
+
+
+def test_recreated_database_does_not_reuse_guids():
+    """Ids restart at 1 in a recreated database; readers must still see new GUIDs."""
+    old = LogEntry("web", 1, "2026-10-03T08:00:00.000000+00:00", "INFO", 20, "web", "m", None)
+    new = LogEntry("web", 1, "2026-10-04T09:30:00.000000+00:00", "INFO", 20, "web", "m", None)
+    assert guid_of(old) != guid_of(new)
+
+
+def test_guid_is_lowercase_letters_and_digits_only_after_the_id():
+    suffix = guid_of(entries(1)[0]).rsplit("-", 1)[1]
+    assert suffix.isalnum() and suffix == suffix.lower()
