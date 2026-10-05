@@ -45,7 +45,7 @@ Or run it once without installing:
 uvx --from git+https://github.com/87zero/sqlite-rss-logger sqlite-rss-logger --log-dir logs
 ```
 
-Pin a release by adding a tag: `git+https://github.com/87zero/sqlite-rss-logger@v0.1.0`.
+Pin a release by adding a tag: `git+https://github.com/87zero/sqlite-rss-logger@v0.2.0`.
 
 ## Quick start
 
